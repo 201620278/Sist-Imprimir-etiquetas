@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sist. Etiquetas</title>
+
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  background: #f5f6f8;
+}
+
+.topo {
+  background: #1f2d3d;
+  color: white;
+  padding: 20px;
+}
+
+.topo h1 {
+  margin: 0;
+}
+
+.topo p {
+  margin: 5px 0 0;
+  opacity: 0.8;
+}
+
+.container {
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.linha {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+input, select {
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+input {
+  flex: 1;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-buscar {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-recarregar {
+  background: #6b7280;
+  color: white;
+}
+
+.produto {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-produto {
+  flex: 1;
+}
+
+.info-produto h3 {
+  margin: 0;
+}
+
+.preco {
+  font-size: 22px;
+  font-weight: bold;
+  margin-right: 20px;
+}
+
+.qtd {
+  width: 60px;
+  padding: 8px;
+}
+
+.btn-imprimir {
+  background: #2563eb;
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topo">
+  <h1>Sist. Etiquetas</h1>
+  <p>Impressão local de etiquetas de produtos</p>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="linha">
+      <input id="busca" placeholder="Digite nome ou código de barras">
+
+      <select id="tamanho">
+        <option>50x30 mm</option>
+      </select>
+
+      <button class="btn-buscar" onclick="buscar()">Buscar</button>
+      <button class="btn-recarregar" onclick="limpar()">Recarregar</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Produtos</h2>
+    <div id="lista"></div>
+  </div>
+
+</div>
+
+<script>
+async function buscar() {
+  const termo = document.getElementById('busca').value.trim();
+  const lista = document.getElementById('lista');
+
+  if (!termo) {
+    lista.innerHTML = '<p>Digite algo para buscar.</p>';
+    return;
+  }
+
+  lista.innerHTML = '<p>Buscando...</p>';
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const res = await fetch(
+      `http://127.0.0.1:3000/api/produtos?busca=${encodeURIComponent(termo)}`,
+      {
+        method: 'GET',
+        signal: controller.signal
+      }
+    );
+
+    clearTimeout(timeout);
+
+    const dados = await res.json();
+
+    console.log('Status da resposta:', res.status);
+    console.log('Dados recebidos:', dados);
+
+    if (!res.ok) {
+      throw new Error(dados.error || 'Erro ao buscar produtos');
+    }
+
+    if (!Array.isArray(dados) || dados.length === 0) {
+      lista.innerHTML = '<p>Nenhum produto encontrado.</p>';
+      return;
+    }
+
+    lista.innerHTML = dados.map(p => `
+      <div class="produto" style="display:flex;justify-content:space-between;align-items:center;padding:15px;border:1px solid #ddd;border-radius:8px;margin-bottom:10px;background:#fff;">
+        <div class="info-produto">
+          <h3 style="margin:0 0 8px 0;">${p.nome}</h3>
+          <div style="color:#555;">
+            Código: ${p.codigo || 'Não informado'} |
+            Código de barras: ${p.codigo_barras || 'Não informado'} |
+            Estoque: ${p.estoque_atual ?? 0}
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:15px;">
+          <div style="font-size:22px;font-weight:bold;color:#0f172a;">
+            R$ ${Number(p.preco_venda || 0).toFixed(2)}
+          </div>
+
+          <input type="number" min="1" value="1" style="width:70px;padding:8px;">
+
+          <button onclick="imprimirEtiqueta('${String(p.nome).replace(/'/g, "\\'")}', ${Number(p.preco_venda || 0)})"
+            style="padding:10px 14px;border:none;border-radius:6px;background:#2563eb;color:white;cursor:pointer;">
+            Imprimir etiqueta
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (erro) {
+    clearTimeout(timeout);
+    console.error('Erro na busca:', erro);
+
+    if (erro.name === 'AbortError') {
+      lista.innerHTML = '<p style="color:red;">A busca demorou demais e foi cancelada. Verifique o backend.</p>';
+      return;
+    }
+
+    lista.innerHTML = `<p style="color:red;">${erro.message}</p>`;
+  }
+}
+
+function imprimirEtiqueta(nome, preco) {
+  const win = window.open('', '', 'width=320,height=220');
+
+  win.document.write(`
+    <html>
+      <head>
+        <title>Etiqueta</title>
+      </head>
+      <body style="font-family:Arial;text-align:center;padding-top:20px;">
+        <div style="font-size:20px;font-weight:bold;">${nome}</div>
+        <div style="font-size:30px;font-weight:bold;margin-top:10px;">
+          R$ ${Number(preco).toFixed(2)}
+        </div>
+      </body>
+    </html>
+  `);
+
+  win.document.close();
+  win.focus();
+  win.print();
+}
+</script>
+
+</body>
+</html>

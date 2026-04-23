@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sist. Etiquetas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topo">
+    <div>
+      <h1>Sist. Etiquetas</h1>
+      <p>Impressao local de etiquetas de produtos</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="painel filtros">
+      <div class="linha linha-topo">
+        <div class="campo campo-busca">
+          <label for="busca">Buscar produto</label>
+          <input type="text" id="busca" placeholder="Digite nome ou codigo de barras" />
+        </div>
+
+        <div class="campo campo-select">
+          <label for="tamanhoEtiqueta">Tamanho da etiqueta</label>
+          <select id="tamanhoEtiqueta">
+            <option value="50x30">50x30 mm</option>
+            <option value="40x30">40x30 mm</option>
+            <option value="60x40">60x40 mm</option>
+          </select>
+        </div>
+
+        <div class="acoes-topo">
+          <button id="btnBuscar">Buscar</button>
+          <button id="btnRecarregar" class="secundario">Recarregar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="painel lista-area">
+      <div class="lista-header">
+        <h2>Produtos</h2>
+        <span id="totalResultados">0 itens</span>
+      </div>
+
+      <div id="listaProdutos" class="lista-produtos"></div>
+    </section>
+  </main>
+
+  <template id="templateProduto">
+    <article class="card-produto">
+      <div class="info-principal">
+        <h3 class="produto-nome"></h3>
+        <div class="meta">
+          <span class="produto-codigo"></span>
+          <span class="produto-estoque"></span>
+        </div>
+      </div>
+
+      <div class="acoes-produto">
+        <div class="preco"></div>
+
+        <div class="quantidade-box">
+          <label>Qtd. etiquetas</label>
+          <input type="number" class="input-qtd" min="1" value="1" />
+        </div>
+
+        <button class="btn-imprimir">Imprimir etiqueta</button>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

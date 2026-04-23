@@ -1,0 +1,186 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f6f8;
+  color: #222;
+}
+
+.topo {
+  background: #1f2937;
+  color: #fff;
+  padding: 20px 24px;
+}
+
+.topo h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+}
+
+.topo p {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.painel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  margin-bottom: 18px;
+}
+
+.linha {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo-busca {
+  flex: 1;
+  min-width: 300px;
+}
+
+.campo-select {
+  width: 180px;
+}
+
+input, select, button {
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid #cfd6dd;
+  padding: 0 12px;
+  font-size: 15px;
+}
+
+button {
+  background: #0f62fe;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button.secundario {
+  background: #6b7280;
+}
+
+button:hover {
+  opacity: 0.94;
+}
+
+.acoes-topo {
+  display: flex;
+  gap: 10px;
+}
+
+.lista-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.lista-header h2 {
+  margin: 0;
+}
+
+.lista-produtos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.card-produto {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.produto-nome {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.acoes-produto {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.preco {
+  font-size: 24px;
+  font-weight: bold;
+  color: #111827;
+  min-width: 130px;
+  text-align: right;
+}
+
+.quantidade-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-qtd {
+  width: 100px;
+}
+
+.mensagem-vazia {
+  text-align: center;
+  padding: 28px;
+  color: #6b7280;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+}
+
+@media (max-width: 860px) {
+  .card-produto {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .acoes-produto {
+    justify-content: flex-start;
+  }
+
+  .preco {
+    text-align: left;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}
