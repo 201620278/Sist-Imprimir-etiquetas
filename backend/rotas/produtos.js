@@ -27,15 +27,15 @@ router.get('/', (req, res) => {
   const busca = req.query.busca || '';
 
 let sql = `
-  SELECT id, nome, preco_venda, codigo_barras
+  SELECT id, codigo, nome, preco_venda, codigo_barras, estoque_atual
   FROM produtos
 `;
 
 let params = [];
 
 if (busca) {
-  sql += ` WHERE nome LIKE ? OR codigo_barras LIKE ?`;
-  params.push(`%${busca}%`, `%${busca}%`);
+  sql += ` WHERE nome LIKE ? OR codigo LIKE ? OR codigo_barras LIKE ?`;
+  params.push(`%${busca}%`, `%${busca}%`, `%${busca}%`);
 }
 
 sql += ` ORDER BY nome LIMIT 50`;
