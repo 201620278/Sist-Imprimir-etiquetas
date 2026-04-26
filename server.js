@@ -1,5 +1,3 @@
-process.env.DB_DIR = 'C:\\projetos\\MercantilFiscal\\dados';
-
 const path = require('path');
 const express = require('express');
 
@@ -8,15 +6,26 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const isPackaged = process.mainModule && process.mainModule.filename.includes('app.asar');
+let isPackaged = false;
+try {
+  const electron = require('electron');
+  isPackaged = !!(electron.app && electron.app.isPackaged);
+} catch (err) {
+  isPackaged = false;
+}
 
 const backendBasePath = isPackaged
-  ? path.join(process.resourcesPath, 'backend')
+  ? path.join(__dirname, 'backend')
   : path.join(__dirname, 'backend');
+
+const frontendBasePath = isPackaged
+  ? path.join(__dirname, 'frontend')
+  : path.join(__dirname, 'frontend');
 
 console.log('Modo empacotado:', isPackaged);
 console.log('process.resourcesPath:', process.resourcesPath);
 console.log('backendBasePath:', backendBasePath);
+console.log('frontendBasePath:', frontendBasePath);
 
 let produtosRouter;
 
@@ -33,12 +42,25 @@ app.use('/api/produtos', produtosRouter);
 app.get('/health', (req, res) => {
   res.json({
     ok: true,
-    backendBasePath
+    backendBasePath,
+    frontendBasePath
   });
 });
 
-const PORT = 3000;
+// servir arquivos do frontend
+app.use(express.static(frontendBasePath));
+
+// rota principal
+app.get('/', (req, res) => {
+  res.sendFile(path.join(frontendBasePath, 'index.html'));
+});
+
+const PORT = process.env.PORT || 3002;
 
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`Servidor rodando em http://127.0.0.1:${PORT}`);
+
+  if (process.send) {
+    process.send('ready');
+  }
 });

@@ -1,64 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database-readonly');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
-router.get('/', (req, res) => {
-  const buscaOriginal = String(req.query.busca || '').trim();
+const DB_DIR = process.env.DB_DIR;
 
-  if (!buscaOriginal) {
-    return res.json([]);
+if (!DB_DIR) {
+  console.error('[ETIQUETAS] DB_DIR não definido.');
+  process.exit(1);
+}
+
+const dbPath = path.join(DB_DIR, 'mercadao.db');
+
+console.log('[ETIQUETAS] Banco em uso:', dbPath);
+
+const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+  if (err) {
+    console.error('[ETIQUETAS] Erro ao abrir banco:', err.message);
+  } else {
+    console.log('[ETIQUETAS] Banco aberto com sucesso.');
   }
+});
 
-  const buscaNumerica = buscaOriginal.replace(/\D/g, '');
-  const termoLike = `%${buscaOriginal}%`;
+// 🔍 BUSCA DE PRODUTOS
+router.get('/', (req, res) => {
+  const busca = req.query.busca || '';
 
-  const sql = `
-    SELECT
-      id,
-      codigo,
-      nome,
-      codigo_barras,
-      preco_venda,
-      estoque_atual
-    FROM produtos
-    WHERE
-      codigo_barras = ?
-      OR codigo = ?
-      OR nome LIKE ?
-      OR codigo_barras LIKE ?
-      OR codigo LIKE ?
-    ORDER BY
-      CASE
-        WHEN codigo_barras = ? THEN 0
-        WHEN codigo = ? THEN 1
-        WHEN nome LIKE ? THEN 2
-        ELSE 3
-      END,
-      nome ASC
-    LIMIT 50
-  `;
+let sql = `
+  SELECT id, nome, preco_venda, codigo_barras
+  FROM produtos
+`;
 
-  const params = [
-    buscaNumerica,
-    buscaOriginal,
-    termoLike,
-    `%${buscaNumerica}%`,
-    termoLike,
-    buscaNumerica,
-    buscaOriginal,
-    termoLike
-  ];
+let params = [];
+
+if (busca) {
+  sql += ` WHERE nome LIKE ? OR codigo_barras LIKE ?`;
+  params.push(`%${busca}%`, `%${busca}%`);
+}
+
+sql += ` ORDER BY nome LIMIT 50`;
 
   db.all(sql, params, (err, rows) => {
     if (err) {
-      console.error('[ETIQUETAS] Erro ao buscar produtos:', err.message);
-      return res.status(500).json({
-        error: 'Erro ao buscar produtos',
-        details: err.message
-      });
+      console.error('[ETIQUETAS] Erro na busca:', err);
+      return res.status(500).json({ error: 'Erro ao buscar produtos' });
     }
 
-    return res.json(rows || []);
+    res.json(rows);
   });
 });
 

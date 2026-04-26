@@ -149,12 +149,12 @@ async function buscar() {
 
   try {
     const res = await fetch(
-      `http://127.0.0.1:3000/api/produtos?busca=${encodeURIComponent(termo)}`,
-      {
-        method: 'GET',
-        signal: controller.signal
-      }
-    );
+  `${window.location.origin}/api/produtos?busca=${encodeURIComponent(termo)}`,
+  {
+    method: 'GET',
+    signal: controller.signal
+  }
+);
 
     clearTimeout(timeout);
 

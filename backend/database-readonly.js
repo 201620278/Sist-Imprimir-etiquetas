@@ -2,7 +2,11 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-const dbDir = process.env.DB_DIR || 'C:\\projetos\\MercantilFiscal\\dados';
+const dbDir = process.env.DB_DIR;
+if (!dbDir) {
+  console.error('[ETIQUETAS] DB_DIR não definido.');
+  process.exit(1);
+}
 const dbPath = path.join(dbDir, 'mercadao.db');
 
 console.log('[ETIQUETAS] Banco em uso:', dbPath);

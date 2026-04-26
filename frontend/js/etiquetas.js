@@ -1,4 +1,4 @@
-const API_PRODUTOS = 'http://127.0.0.1:3000/api/produtos';
+const API_PRODUTOS = `${window.location.origin}/api/produtos`;
 
 function renderizarProdutos(produtos) {
   const lista = document.getElementById('lista-produtos');
