@@ -2,166 +2,293 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sist. Etiquetas</title>
 
 <style>
+* { box-sizing: border-box; }
 body {
-  font-family: Arial;
+  font-family: Arial, Helvetica, sans-serif;
   margin: 0;
   background: #f5f6f8;
+  color: #111827;
 }
-
 .topo {
   background: #1f2d3d;
   color: white;
   padding: 20px;
 }
-
-.topo h1 {
-  margin: 0;
-}
-
-.topo p {
-  margin: 5px 0 0;
-  opacity: 0.8;
-}
-
-.container {
-  padding: 20px;
-}
-
+.topo h1 { margin: 0; }
+.topo p { margin: 5px 0 0; opacity: 0.8; }
+.container { padding: 20px; max-width: 1250px; margin: 0 auto; }
 .card {
   background: white;
   border-radius: 10px;
   padding: 20px;
   margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
 }
-
 .linha {
   display: flex;
   gap: 15px;
-  align-items: center;
+  align-items: end;
+  flex-wrap: wrap;
 }
-
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.campo-busca { flex: 1; min-width: 260px; }
+.campo-pequeno { width: 125px; }
+label { font-size: 13px; font-weight: bold; color: #374151; }
 input, select {
+  height: 42px;
   padding: 10px;
   font-size: 14px;
   border-radius: 5px;
   border: 1px solid #ccc;
 }
-
-input {
-  flex: 1;
-}
-
 button {
+  height: 42px;
   padding: 10px 15px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-weight: bold;
 }
-
-.btn-buscar {
-  background: #2563eb;
-  color: white;
-}
-
-.btn-recarregar {
-  background: #6b7280;
-  color: white;
-}
-
+.btn-buscar { background: #2563eb; color: white; }
+.btn-recarregar { background: #6b7280; color: white; }
+.btn-imprimir { background: #16a34a; color: white; }
 .produto {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #fff;
+  gap: 15px;
 }
-
-.info-produto {
-  flex: 1;
-}
-
-.info-produto h3 {
-  margin: 0;
-}
-
+.info-produto { flex: 1; min-width: 280px; }
+.info-produto h3 { margin: 0 0 8px 0; }
+.meta { color: #555; line-height: 1.5; }
 .preco {
   font-size: 22px;
   font-weight: bold;
-  margin-right: 20px;
+  color: #0f172a;
+  min-width: 120px;
+  text-align: right;
+}
+.acoes-produto {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.qtd { width: 75px; }
+.aviso {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+@media (max-width: 850px) {
+  .produto { flex-direction: column; align-items: stretch; }
+  .acoes-produto { justify-content: flex-start; }
+  .preco { text-align: left; }
 }
 
-.qtd {
-  width: 60px;
-  padding: 8px;
-}
-
-.btn-imprimir {
-  background: #2563eb;
-  color: white;
+#area-etiqueta {
+  display: none;
 }
 </style>
 </head>
 
 <body>
-
 <div class="topo">
   <h1>Sist. Etiquetas</h1>
-  <p>Impressão local de etiquetas de produtos</p>
+  <p>Impressão local de etiquetas com preço e código de barras</p>
 </div>
 
 <div class="container">
-
+  <div class="card" style="margin-bottom:20px;padding:10px;border:1px solid #ccc;background:#f9f9f9;border-radius:8px;">
+    <label for="dbDir">Caminho da pasta do banco:</label>
+    <input type="text" id="dbDir" style="width:350px" placeholder="Ex: C:/projetos/MercantilFiscal/dados">
+    <button id="btnSalvarDbDir" onclick="salvarDbDir()">Salvar</button>
+    <span id="dbDirStatus" style="margin-left:10px;color:#007700"></span>
+  </div>
+  <div class="card" style="margin-bottom:20px;padding:10px;border:1px solid #ccc;background:#f9f9f9;border-radius:8px;">
+    <label for="printerName">Impressora de etiquetas:</label>
+    <select id="printerName" style="width:350px">
+      <option value="">Carregando impressoras...</option>
+    </select>
+    <button onclick="salvarImpressora()">Salvar impressora</button>
+    <span id="printerStatus"></span>
+  </div>
   <div class="card">
     <div class="linha">
-      <input id="busca" placeholder="Digite nome ou código de barras">
+      <div class="campo campo-busca">
+        <label>Buscar produto</label>
+        <input id="busca" placeholder="Digite nome, código interno ou código de barras">
+      </div>
 
-      <select id="tamanho">
-        <option>50x30 mm</option>
-      </select>
+      <div class="campo campo-pequeno">
+        <label>Largura etiqueta</label>
+        <input id="larguraEtiqueta" type="number" min="20" max="120" step="1" value="100">
+      </div>
+
+      <div class="campo campo-pequeno">
+        <label>Altura etiqueta</label>
+        <input id="alturaEtiqueta" type="number" min="15" max="80" step="1" value="25">
+      </div>
+
+      <div class="campo campo-pequeno">
+        <label>Altura barras</label>
+        <input id="alturaBarras" type="number" min="8" max="50" step="1" value="18">
+      </div>
+
+      <div class="campo campo-pequeno">
+        <label>Tamanho nome</label>
+        <input id="fonteNome" type="number" min="6" max="30" step="1" value="11">
+      </div>
 
       <button class="btn-buscar" onclick="buscar()">Buscar</button>
       <button class="btn-recarregar" onclick="limpar()">Recarregar</button>
     </div>
+
+    <div class="aviso">
+      O sistema usa o código de barras do produto. Se não existir, usa o código interno. Se também não existir, usa o ID do produto.
+    </div>
   </div>
 
   <div class="card">
-    <h2>Produtos</h2>
-    <div id="lista"></div>
+    <h2>Resultado da busca</h2>
+    <div id="lista"><p>Digite o nome, código interno ou código de barras e clique em <strong>Buscar</strong>.</p></div>
   </div>
-
 </div>
 
 <script>
+if (typeof carregarDbDir === 'function') {
+  window.addEventListener('DOMContentLoaded', carregarDbDir);
+}
+
+async function carregarImpressoras() {
+  const select = document.getElementById('printerName');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Selecione uma impressora</option>';
+
+  const API_CONFIG = `${window.location.origin}/api/config`;
+
+  try {
+    if (!window.electronAPI || typeof window.electronAPI.listarImpressoras !== 'function') {
+      console.error('window.electronAPI.listarImpressoras não disponível');
+      select.innerHTML = '<option value="">API não disponível</option>';
+      return;
+    }
+
+    const configRes = await fetch(API_CONFIG);
+    const config = await configRes.json();
+
+    const impressoras = await window.electronAPI.listarImpressoras();
+    console.log('Impressoras encontradas:', impressoras);
+
+    impressoras.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.isDefault ? `${p.name} (Padrão)` : p.name;
+
+      if (config.printerName === p.name) {
+        opt.selected = true;
+      }
+
+      select.appendChild(opt);
+    });
+  } catch (error) {
+    console.error('Erro ao carregar impressoras:', error);
+    select.innerHTML = '<option value="">Erro ao carregar impressoras</option>';
+  }
+}
+
+async function salvarImpressora() {
+  const printerName = document.getElementById('printerName').value;
+  const status = document.getElementById('printerStatus');
+
+  const API_CONFIG = `${window.location.origin}/api/config`;
+
+  await fetch(API_CONFIG, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ printerName })
+  });
+
+  status.textContent = 'Impressora salva!';
+}
+
+window.addEventListener('DOMContentLoaded', carregarImpressoras);
+
+const produtosCarregados = new Map();
+
+function moeda(valor) {
+  return Number(valor || 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  });
+}
+
+function escapeHtml(texto) {
+  return String(texto ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function numeroValido(id, padrao, min, max) {
+  const valor = Number(document.getElementById(id).value || padrao);
+  if (Number.isNaN(valor)) return padrao;
+  return Math.min(Math.max(valor, min), max);
+}
+
+function obterCodigoProduto(produto) {
+  return String(
+    produto.codigo_barras ||
+    produto.codigo ||
+    produto.id ||
+    '000000000000'
+  ).trim();
+}
+
 async function buscar() {
   const termo = document.getElementById('busca').value.trim();
   const lista = document.getElementById('lista');
 
   if (!termo) {
-    lista.innerHTML = '<p>Digite algo para buscar.</p>';
+    produtosCarregados.clear();
+    lista.innerHTML = '<p>Digite o nome, código interno ou código de barras para buscar um produto.</p>';
+    document.getElementById('busca').focus();
     return;
   }
 
   lista.innerHTML = '<p>Buscando...</p>';
 
+  const url = `${window.location.origin}/api/produtos?busca=${encodeURIComponent(termo)}`;
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
 
   try {
-    const res = await fetch(
-  `${window.location.origin}/api/produtos?busca=${encodeURIComponent(termo)}`,
-  {
-    method: 'GET',
-    signal: controller.signal
-  }
-);
-
+    const res = await fetch(url, { method: 'GET', signal: controller.signal });
     clearTimeout(timeout);
 
     const dados = await res.json();
-
-    console.log('Status da resposta:', res.status);
-    console.log('Dados recebidos:', dados);
 
     if (!res.ok) {
       throw new Error(dados.error || 'Erro ao buscar produtos');
@@ -172,31 +299,40 @@ async function buscar() {
       return;
     }
 
-    lista.innerHTML = dados.map(p => `
-      <div class="produto" style="display:flex;justify-content:space-between;align-items:center;padding:15px;border:1px solid #ddd;border-radius:8px;margin-bottom:10px;background:#fff;">
-        <div class="info-produto">
-          <h3 style="margin:0 0 8px 0;">${p.nome}</h3>
-          <div style="color:#555;">
-            Código: ${p.codigo || 'Não informado'} |
-            Código de barras: ${p.codigo_barras || 'Não informado'} |
-            Estoque: ${p.estoque_atual ?? 0}
+    produtosCarregados.clear();
+
+    lista.innerHTML = dados.map((p, index) => {
+      const key = String(p.id ?? index);
+      produtosCarregados.set(key, p);
+      const codigoEtiqueta = obterCodigoProduto(p);
+
+      return `
+        <div class="produto">
+          <div class="info-produto">
+            <h3>${escapeHtml(p.nome || 'Produto sem nome')}</h3>
+            <div class="meta">
+              Código interno: ${escapeHtml(p.codigo || 'Não informado')}<br>
+              Código de barras: ${escapeHtml(p.codigo_barras || 'Não informado')}<br>
+              Código usado na etiqueta: <strong>${escapeHtml(codigoEtiqueta)}</strong><br>
+              Estoque: ${escapeHtml(p.estoque_atual ?? 0)}
+            </div>
+          </div>
+
+          <div class="acoes-produto">
+            <div class="preco">${moeda(p.preco_venda || 0)}</div>
+
+            <div class="campo">
+              <label>Qtd.</label>
+              <input id="qtd-${escapeHtml(key)}" class="qtd" type="number" min="1" value="1">
+            </div>
+
+            <button class="btn-imprimir" onclick="imprimirEtiqueta('${escapeHtml(key)}')">
+              Imprimir etiqueta
+            </button>
           </div>
         </div>
-
-        <div style="display:flex;align-items:center;gap:15px;">
-          <div style="font-size:22px;font-weight:bold;color:#0f172a;">
-            R$ ${Number(p.preco_venda || 0).toFixed(2)}
-          </div>
-
-          <input type="number" min="1" value="1" style="width:70px;padding:8px;">
-
-          <button onclick="imprimirEtiqueta('${String(p.nome).replace(/'/g, "\\'")}', ${Number(p.preco_venda || 0)})"
-            style="padding:10px 14px;border:none;border-radius:6px;background:#2563eb;color:white;cursor:pointer;">
-            Imprimir etiqueta
-          </button>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
   } catch (erro) {
     clearTimeout(timeout);
@@ -207,32 +343,317 @@ async function buscar() {
       return;
     }
 
-    lista.innerHTML = `<p style="color:red;">${erro.message}</p>`;
+    lista.innerHTML = `<p style="color:red;">${escapeHtml(erro.message)}</p>`;
   }
 }
 
-function imprimirEtiqueta(nome, preco) {
-  const win = window.open('', '', 'width=320,height=220');
-
-  win.document.write(`
-    <html>
-      <head>
-        <title>Etiqueta</title>
-      </head>
-      <body style="font-family:Arial;text-align:center;padding-top:20px;">
-        <div style="font-size:20px;font-weight:bold;">${nome}</div>
-        <div style="font-size:30px;font-weight:bold;margin-top:10px;">
-          R$ ${Number(preco).toFixed(2)}
-        </div>
-      </body>
-    </html>
-  `);
-
-  win.document.close();
-  win.focus();
-  win.print();
+function limpar() {
+  produtosCarregados.clear();
+  document.getElementById('busca').value = '';
+  document.getElementById('lista').innerHTML = '<p>Digite o nome, código interno ou código de barras e clique em <strong>Buscar</strong>.</p>';
+  document.getElementById('busca').focus();
 }
+
+function aplicarConfiguracaoEtiqueta() {
+  const largura = numeroValido('larguraEtiqueta', 100, 20, 120);
+  const altura = numeroValido('alturaEtiqueta', 25, 10, 80);
+  const alturaBarras = numeroValido('alturaBarras', 18, 6, Math.max(6, altura - 8));
+  const fonteNomeUsuario = numeroValido('fonteNome', 11, 6, 30);
+
+  const padding = Math.max(1, Math.round(altura * 0.04));
+  const gap = Math.max(1, Math.round(largura * 0.02));
+
+  // Aumentei a área do código de barras
+  const larguraCodigo = Math.round(largura * 0.52);
+  const larguraInfo = largura - larguraCodigo - gap - (padding * 2);
+
+  const alturaUtil = altura - (padding * 2);
+
+  const larguraSvg = Math.max(22, larguraCodigo - 3);
+  const alturaSvg = Math.min(alturaBarras, Math.max(8, alturaUtil - 10));
+
+  // Fontes maiores
+  const fonteCodigo = Math.max(9, Math.round(altura * 0.18));
+  const fonteNome = fonteNomeUsuario;
+  const fontePreco = Math.max(22, Math.round(altura * 0.42));
+
+  let estilo = document.getElementById('estilo-etiqueta');
+
+  if (!estilo) {
+    estilo = document.createElement('style');
+    estilo.id = 'estilo-etiqueta';
+    document.head.appendChild(estilo);
+  }
+
+  estilo.innerHTML = `
+    #area-etiqueta { display: none; }
+
+    @media print {
+      @page {
+        size: ${largura}mm ${altura}mm;
+        margin: 0;
+      }
+
+      html, body {
+        width: ${largura}mm !important;
+        height: ${altura}mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: #fff !important;
+      }
+
+      body * {
+        visibility: hidden !important;
+      }
+
+      #area-etiqueta,
+      #area-etiqueta * {
+        visibility: visible !important;
+      }
+
+      #area-etiqueta {
+        display: block !important;
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: ${largura}mm !important;
+        height: ${altura}mm !important;
+        overflow: hidden !important;
+        background: #fff !important;
+      }
+
+      .etiqueta-horizontal {
+        width: ${largura}mm !important;
+        height: ${altura}mm !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+        padding: ${padding}mm !important;
+        gap: ${gap}mm !important;
+        overflow: hidden !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+        color: #000 !important;
+        background: #fff !important;
+      }
+
+      .lado-codigo {
+        width: ${larguraCodigo}mm !important;
+        height: ${alturaUtil}mm !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        flex-shrink: 0 !important;
+      }
+
+      .lado-codigo .barcode {
+        width: ${larguraSvg}mm !important;
+        height: ${alturaSvg}mm !important;
+        display: block !important;
+      }
+
+      .codigo-numero {
+        display: block !important;
+        font-size: ${fonteCodigo}pt !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        margin-top: 1mm !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+      }
+
+      .separador-etiqueta {
+        display: block !important;
+        width: 0 !important;
+        height: ${alturaUtil}mm !important;
+        border-left: 0.35mm solid #000 !important;
+        flex-shrink: 0 !important;
+      }
+
+      .lado-info {
+        width: ${larguraInfo}mm !important;
+        height: ${alturaUtil}mm !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+      }
+
+      .produto-nome-etq {
+        display: block !important;
+        font-size: ${fonteNome}pt !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        max-height: ${Math.round(alturaUtil * 0.48)}mm !important;
+        overflow: hidden !important;
+        word-break: break-word !important;
+      }
+
+      .linha-divisoria {
+        display: block !important;
+        width: 100% !important;
+        border-top: 0.25mm dashed #000 !important;
+        margin: 1.5mm 0 !important;
+      }
+
+      .produto-preco-etq {
+        display: block !important;
+        font-size: ${fontePreco}pt !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+      }
+    }
+  `;
+
+  return {
+    largura,
+    altura,
+    alturaBarras,
+    larguraSvg,
+    alturaSvg
+  };
+}
+
+let imprimindo = false;
+
+function gerarBarcodeCode128Svg(valor, larguraMm, alturaMm) {
+  let texto = String(valor || '').trim();
+  if (!texto) texto = 'SEM-CODIGO';
+
+  const patterns = [
+    '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
+    '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
+    '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
+    '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
+    '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
+    '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
+    '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
+    '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
+    '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
+    '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
+    '114131','311141','411131','211412','211214','211232','2331112'
+  ];
+
+  const startB = 104;
+  const stop = 106;
+  const codes = [startB];
+
+  for (const char of texto) {
+    const code = char.charCodeAt(0);
+    if (code >= 32 && code <= 126) {
+      codes.push(code - 32);
+    } else {
+      codes.push(13); // caractere não suportado vira hífen
+    }
+  }
+
+  let checksum = startB;
+  for (let i = 1; i < codes.length; i++) {
+    checksum += codes[i] * i;
+  }
+  checksum = checksum % 103;
+  codes.push(checksum, stop);
+
+  let x = 0;
+  const barras = [];
+
+  for (const code of codes) {
+    const pattern = patterns[code];
+    for (let i = 0; i < pattern.length; i++) {
+      const w = Number(pattern[i]);
+      if (i % 2 === 0) {
+        barras.push(`<rect x="${x}" y="0" width="${w}" height="100" />`);
+      }
+      x += w;
+    }
+  }
+
+  return `
+    <svg class="barcode" width="${larguraMm}mm" height="${alturaMm}mm" viewBox="0 0 ${x} 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      ${barras.join('')}
+    </svg>
+  `;
+}
+
+function imprimirEtiqueta(key) {
+  if (imprimindo) return;
+  imprimindo = true;
+
+  const produto = produtosCarregados.get(String(key));
+  if (!produto) {
+    alert('Produto não encontrado na lista carregada. Busque novamente.');
+    imprimindo = false;
+    return;
+  }
+
+  const qtdInput = document.getElementById(`qtd-${key}`);
+  const quantidade = Number(qtdInput?.value || 1);
+
+  if (!quantidade || quantidade < 1) {
+    alert('Informe uma quantidade válida.');
+    imprimindo = false;
+    return;
+  }
+
+  const config = aplicarConfiguracaoEtiqueta();
+
+  const nome = produto.nome || produto.descricao || 'Produto';
+  const preco = Number(produto.preco_venda || produto.preco || 0).toFixed(2).replace('.', ',');
+  const codigo = obterCodigoProduto(produto);
+
+  document.getElementById('etq-produto').innerText = nome;
+  document.getElementById('etq-codigo').innerText = codigo;
+  document.getElementById('etq-preco').innerText = `R$ ${preco}`;
+
+  document.getElementById('barcodeBox').innerHTML = gerarBarcodeCode128Svg(
+    codigo,
+    config.larguraSvg,
+    config.alturaSvg
+  );
+
+  setTimeout(() => {
+    if (window.electronAPI && typeof window.electronAPI.imprimirEtiqueta === 'function') {
+      window.electronAPI.imprimirEtiqueta({
+        largura: config.largura,
+        altura: config.altura
+      });
+    } else {
+      window.print();
+    }
+
+    setTimeout(() => {
+      imprimindo = false;
+    }, 1800);
+  }, 300);
+}
+
+document.getElementById('busca').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') buscar();
+});
+
+document.getElementById('busca').focus();
 </script>
 
+<div id="area-etiqueta">
+  <div class="etiqueta-horizontal">
+    <div class="lado-codigo">
+      <div id="barcodeBox"></div>
+      <div id="etq-codigo" class="codigo-numero"></div>
+    </div>
+
+    <div class="separador-etiqueta"></div>
+
+    <div class="lado-info">
+      <div id="etq-produto" class="produto-nome-etq"></div>
+      <div class="linha-divisoria"></div>
+      <div id="etq-preco" class="produto-preco-etq"></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

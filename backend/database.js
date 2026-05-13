@@ -1,25 +1,58 @@
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
-// CAMINHO REAL DO SEU BANCO
-const dbPath = 'C:\\projetos\\MercantilFiscal\\dados\\mercadao.db';
+const configPath = path.join(__dirname, 'config.json');
 
-console.log('BANCO EM USO:', dbPath);
+let db = null;
+let dbPathAtual = null;
 
-// valida se o banco existe
-if (!fs.existsSync(dbPath)) {
-  console.error('ERRO: Banco não encontrado nesse caminho:', dbPath);
-  process.exit(1);
+function lerConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  } catch {
+    return { dbDir: '' };
+  }
 }
 
-// conecta
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('ERRO AO ABRIR BANCO:', err.message);
-    process.exit(1);
-  } else {
-    console.log('BANCO SQLITE CONECTADO COM SUCESSO.');
-  }
-});
+function getDb() {
+  const config = lerConfig();
+  const dbDir = String(config.dbDir || '').trim();
 
-module.exports = db;
+  if (!dbDir) {
+    return null;
+  }
+
+  const dbPath = path.join(dbDir, 'mercadao.db');
+
+  if (!fs.existsSync(dbPath)) {
+    console.warn('[ETIQUETAS] Banco não encontrado:', dbPath);
+    return null;
+  }
+
+  if (db && dbPathAtual === dbPath) {
+    return db;
+  }
+
+  if (db) {
+    db.close();
+    db = null;
+  }
+
+  dbPathAtual = dbPath;
+
+  db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+    if (err) {
+      console.error('[ETIQUETAS] Erro ao abrir banco:', err.message);
+      db = null;
+    } else {
+      console.log('[ETIQUETAS] Banco conectado:', dbPath);
+    }
+  });
+
+  return db;
+}
+
+module.exports = {
+  getDb
+};

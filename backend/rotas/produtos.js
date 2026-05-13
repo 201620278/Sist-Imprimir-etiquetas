@@ -3,47 +3,64 @@ const router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const DB_DIR = process.env.DB_DIR;
 
-if (!DB_DIR) {
-  console.error('[ETIQUETAS] DB_DIR não definido.');
-  process.exit(1);
-}
+// Usa o database.js que já lida com ausência do banco
+const { getDb } = require('../database');
 
-const dbPath = path.join(DB_DIR, 'mercadao.db');
-
-console.log('[ETIQUETAS] Banco em uso:', dbPath);
-
-const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
-  if (err) {
-    console.error('[ETIQUETAS] Erro ao abrir banco:', err.message);
-  } else {
-    console.log('[ETIQUETAS] Banco aberto com sucesso.');
-  }
-});
-
-// 🔍 BUSCA DE PRODUTOS
+// 🔍 BUSCA DE PRODUTO
+// Importante: esta rota NÃO lista todos os produtos.
+// Ela só retorna 1 item quando o usuário informa uma busca.
 router.get('/', (req, res) => {
-  const busca = req.query.busca || '';
+  const db = getDb();
 
-let sql = `
-  SELECT id, codigo, nome, preco_venda, codigo_barras, estoque_atual
-  FROM produtos
-`;
+  if (!db) {
+    return res.status(503).json({
+      error: 'Banco de dados não configurado. Informe o caminho do banco nas configurações.'
+    });
+  }
 
-let params = [];
+  const busca = String(req.query.busca || '').trim();
+  if (!busca) {
+    return res.json([]);
+  }
 
-if (busca) {
-  sql += ` WHERE nome LIKE ? OR codigo LIKE ? OR codigo_barras LIKE ?`;
-  params.push(`%${busca}%`, `%${busca}%`, `%${busca}%`);
-}
+  const sql = `
+    SELECT id, codigo, nome, preco_venda, codigo_barras, estoque_atual
+    FROM produtos
+    WHERE
+      codigo_barras = ?
+      OR codigo = ?
+      OR nome LIKE ?
+      OR codigo_barras LIKE ?
+      OR codigo LIKE ?
+    ORDER BY
+      CASE
+        WHEN codigo_barras = ? THEN 1
+        WHEN codigo = ? THEN 2
+        WHEN nome = ? THEN 3
+        WHEN nome LIKE ? THEN 4
+        ELSE 5
+      END,
+      nome ASC
+    LIMIT 1
+  `;
 
-sql += ` ORDER BY nome LIMIT 50`;
+  const params = [
+    busca,
+    busca,
+    `%${busca}%`,
+    `%${busca}%`,
+    `%${busca}%`,
+    busca,
+    busca,
+    busca,
+    `${busca}%`
+  ];
 
   db.all(sql, params, (err, rows) => {
     if (err) {
       console.error('[ETIQUETAS] Erro na busca:', err);
-      return res.status(500).json({ error: 'Erro ao buscar produtos' });
+      return res.status(500).json({ error: 'Erro ao buscar produto' });
     }
 
     res.json(rows);

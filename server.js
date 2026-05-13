@@ -3,64 +3,64 @@ const express = require('express');
 
 const app = express();
 
+process.on('uncaughtException', (err) => {
+  console.error('[ERRO FATAL]', err.stack || err.message || err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('[PROMISE REJEITADA]', err && err.stack ? err.stack : err);
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-let isPackaged = false;
-try {
-  const electron = require('electron');
-  isPackaged = !!(electron.app && electron.app.isPackaged);
-} catch (err) {
-  isPackaged = false;
-}
+const backendBasePath = path.join(__dirname, 'backend');
+const frontendBasePath = path.join(__dirname, 'frontend');
 
-const backendBasePath = isPackaged
-  ? path.join(__dirname, 'backend')
-  : path.join(__dirname, 'backend');
-
-const frontendBasePath = isPackaged
-  ? path.join(__dirname, 'frontend')
-  : path.join(__dirname, 'frontend');
-
-console.log('Modo empacotado:', isPackaged);
-console.log('process.resourcesPath:', process.resourcesPath);
 console.log('backendBasePath:', backendBasePath);
 console.log('frontendBasePath:', frontendBasePath);
+console.log('PORT:', process.env.PORT || 3002);
+console.log('DB_DIR:', process.env.DB_DIR || '(não definido)');
 
-let produtosRouter;
+function carregarRota(url, arquivo) {
+  try {
+    const rota = require(path.join(backendBasePath, 'rotas', arquivo));
+    app.use(url, rota);
+    console.log('Rota carregada:', url, arquivo);
+  } catch (error) {
+    console.error('Erro ao carregar rota:', url, arquivo);
+    console.error(error.stack || error.message || error);
 
-try {
-  produtosRouter = require(path.join(backendBasePath, 'rotas', 'produtos'));
-  console.log('Rota de produtos carregada com sucesso.');
-} catch (error) {
-  console.error('Erro ao carregar rota de produtos:', error);
-  process.exit(1);
+    app.use(url, (_req, res) => {
+      res.status(500).json({
+        error: 'Erro ao carregar rota ' + url,
+        detail: error.message || String(error)
+      });
+    });
+  }
 }
 
-app.use('/api/produtos', produtosRouter);
+carregarRota('/api/produtos', 'produtos');
+carregarRota('/api/tamanhos-etiqueta', 'tamanhos-etiqueta');
+carregarRota('/api/config', 'config');
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     ok: true,
+    port: process.env.PORT || 3002,
     backendBasePath,
     frontendBasePath
   });
 });
 
-// servir arquivos do frontend
 app.use(express.static(frontendBasePath));
 
-// rota principal
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.sendFile(path.join(frontendBasePath, 'index.html'));
 });
 
-const PORT = process.env.PORT || 3002;
+const PORT = Number(process.env.PORT || 3002);
 
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`Servidor rodando em http://127.0.0.1:${PORT}`);
-
-  if (process.send) {
-    process.send('ready');
-  }
 });

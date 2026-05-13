@@ -1,7 +1,54 @@
+// --- Configuração do caminho do banco ---
+const API_CONFIG = `${window.location.origin}/api/config`;
+
+async function carregarDbDir() {
+  try {
+    const res = await fetch(API_CONFIG);
+    const data = await res.json();
+    document.getElementById('dbDir').value = data.dbDir || '';
+  } catch {
+    document.getElementById('dbDir').value = '';
+  }
+}
+
+async function salvarDbDir() {
+  const dbDir = document.getElementById('dbDir').value.trim();
+  const status = document.getElementById('dbDirStatus');
+  status.textContent = '';
+  if (!dbDir) {
+    status.textContent = 'Informe o caminho.';
+    status.style.color = '#bb0000';
+    return;
+  }
+  try {
+    const res = await fetch(API_CONFIG, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dbDir })
+    });
+    if (res.ok) {
+      status.textContent = 'Salvo! Reinicie o backend para aplicar.';
+      status.style.color = '#007700';
+    } else {
+      const data = await res.json();
+      status.textContent = data.error || 'Erro ao salvar.';
+      status.style.color = '#bb0000';
+    }
+  } catch {
+    status.textContent = 'Erro ao salvar.';
+    status.style.color = '#bb0000';
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  carregarDbDir();
+  const btn = document.getElementById('btnSalvarDbDir');
+  if (btn) btn.onclick = salvarDbDir;
+});
 const API_PRODUTOS = `${window.location.origin}/api/produtos`;
 
 function renderizarProdutos(produtos) {
-  const lista = document.getElementById('lista-produtos');
+  const lista = document.getElementById('lista');
   const contador = document.getElementById('contador-itens');
 
   if (!lista) return;
@@ -17,6 +64,7 @@ function renderizarProdutos(produtos) {
   lista.innerHTML = produtos.map(
     (produto) => `
     <div style="border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px;background:#fff;">
+      <div style="font-size:16px;font-weight:bold;text-align:center;margin-bottom:4px;letter-spacing:1px;">ESQUINÃO DA ECONOMIA</div>
       <div style="font-size:18px;font-weight:bold;">${produto.nome || ''}</div>
       <div><strong>ID:</strong> ${produto.id}</div>
       <div><strong>Código de barras:</strong> ${produto.codigo_barras || '-'}</div>
@@ -27,8 +75,10 @@ function renderizarProdutos(produtos) {
 }
 
 async function carregarProdutos() {
-  const lista = document.getElementById('lista-produtos');
+  const lista = document.getElementById('lista');
   const contador = document.getElementById('contador-itens');
+
+  if (!lista) return;
 
   try {
     lista.innerHTML = '<div>Carregando produtos...</div>';
@@ -65,7 +115,9 @@ async function carregarProdutos() {
 async function buscarProduto() {
   const input = document.getElementById('buscar-produto');
   const termo = input.value.trim();
-  const lista = document.getElementById('lista-produtos');
+  const lista = document.getElementById('lista');
+
+  if (!lista) return;
 
   try {
     lista.innerHTML = '<div>Buscando produto...</div>';
@@ -103,7 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRecarregar = document.getElementById('btnRecarregar');
   const inputBusca = document.getElementById('buscar-produto');
 
-  carregarProdutos();
+  if (document.getElementById('lista')) {
+    carregarProdutos();
+  }
 
   if (btnBuscar) btnBuscar.addEventListener('click', buscarProduto);
   if (btnRecarregar) btnRecarregar.addEventListener('click', carregarProdutos);

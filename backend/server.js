@@ -20,14 +20,18 @@ process.on('unhandledRejection', (err) => {
   log('unhandledRejection: ' + (err && err.stack ? err.stack : String(err)));
 });
 
+
 const produtosRouter = require('./rotas/produtos');
 const tamanhosEtiquetaRouter = require('./rotas/tamanhos-etiqueta');
+const configRouter = require('./rotas/config');
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/produtos', produtosRouter);
 app.use('/api/tamanhos-etiqueta', tamanhosEtiquetaRouter);
+app.use('/api/config', configRouter);
 
 app.listen(3000, () => {
   console.log('SERVIDOR RODANDO EM http://127.0.0.1:3000');

@@ -167,7 +167,7 @@ function imprimirEtiqueta(produto, quantidade, formato) {
       <script>
         window.onload = function() {
           setTimeout(function() {
-            window.print();
+            window.electronAPI.imprimirEtiqueta();
           }, 300);
         };
       <\/script>
